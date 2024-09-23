@@ -31,7 +31,34 @@ app.get('/tarefa/:id', async (request, response) => {
   }
 })
 
-app.post('/tarefa', (request, response) => response.send('Não implementado'))
+app.post('/tarefa', async (request, response) => {
+  try {
+    const { descricao, completa } = request.body
+
+    if (typeof descricao !== 'string' || descricao.trim() === "") {
+      return response.status(400).json({ error: 'O campo "descricao" é obrigatório e deve ser uma string.' })
+    }
+
+    if (typeof completa !== 'boolean' && completa !== undefined) {
+      return response.status(400).json({ error: 'O campo "completa" deve ser boolean.' })
+    }
+
+    const novaTarefa = {
+      id: Date.now().toString(),
+      descricao,
+      completa: !!completa
+    }
+
+    const tarefas = await lerTarefas()
+    tarefas.push(novaTarefa)
+    await gravarTarefas(tarefas)
+
+    response.status(201).json(novaTarefa)
+  } catch (error) {
+    response.status(500).json({ error: 'Erro ao criar tarefa' })
+  }
+})
+
 app.put('/tarefa/:id', (request, response) => response.send('Não implementado'))
 app.delete('/tarefa/:id', (request, response) => response.send('Não implementado'))
 app.path('/tarefa/:id/completa', (request, response) => response.send('Não implementado'))
