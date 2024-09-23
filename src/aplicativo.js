@@ -1,15 +1,37 @@
 import express from 'express'
 import cors from 'cors'
 import { lerTarefas, gravarTarefas } from './tarefas.js'
+import { promises as fs } from 'fs'
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
 
+async function validarAutenticacao(request, response, next) {
+  const token = request.headers['authorization']?.split(' ')[1]
+
+  if (!token) {
+    return response.status(401).json({ error: 'Token não fornecido' })
+  }
+
+  try {
+    const data = await fs.readFile('src/autenticacao.json')
+    const { tokens } = JSON.parse(data)
+
+    if (tokens.includes(token)) {
+      next()
+    } else {
+      response.status(403).json({ error: 'Token inválido' })
+    }
+  } catch (error) {
+    response.status(500).json({ error: 'Erro ao validar o token' + error})
+  }
+}
+
 app.get('/', (request, response) => response.send('Olá Tarefas'))
 
-app.get('/tarefas', async (request, response) => {
+app.get('/tarefas', validarAutenticacao, async (request, response) => {
   try {
     const tarefas = await lerTarefas()
     response.json(tarefas)
@@ -18,7 +40,7 @@ app.get('/tarefas', async (request, response) => {
   }
 })
 
-app.get('/tarefa/:id', async (request, response) => {
+app.get('/tarefa/:id', validarAutenticacao, async (request, response) => {
   try {
     const tarefas = await lerTarefas()
     const tarefa = tarefas.find(t => t.id === request.params.id)
@@ -31,7 +53,7 @@ app.get('/tarefa/:id', async (request, response) => {
   }
 })
 
-app.post('/tarefa', async (request, response) => {
+app.post('/tarefa', validarAutenticacao, async (request, response) => {
   try {
     const { descricao, completa } = request.body
 
@@ -59,7 +81,7 @@ app.post('/tarefa', async (request, response) => {
   }
 })
 
-app.put('/tarefa/:id', async (request, response) => {
+app.put('/tarefa/:id', validarAutenticacao, async (request, response) => {
   try {
     const { descricao, completa } = request.body
     const tarefas = await lerTarefas()
@@ -93,7 +115,7 @@ app.put('/tarefa/:id', async (request, response) => {
   }
 })
 
-app.delete('/tarefa/:id', async (request, response) => {
+app.delete('/tarefa/:id', validarAutenticacao, async (request, response) => {
   try {
     const tarefas = await lerTarefas()
     const index = tarefas.findIndex(t => t.id === request.params.id)
@@ -112,7 +134,7 @@ app.delete('/tarefa/:id', async (request, response) => {
   }
 })
 
-app.patch('/tarefa/:id/completa', async (request, response) => {
+app.patch('/tarefa/:id/completa', validarAutenticacao, async (request, response) => {
   try {
     const tarefas = await lerTarefas()
     const index = tarefas.findIndex(t => t.id === request.params.id)
@@ -131,7 +153,7 @@ app.patch('/tarefa/:id/completa', async (request, response) => {
   }
 })
 
-app.patch('/tarefa/:id/incompleta', async (request, response) => {
+app.patch('/tarefa/:id/incompleta', validarAutenticacao, async (request, response) => {
   try {
     const tarefas = await lerTarefas()
     const index = tarefas.findIndex(t => t.id === request.params.id)
