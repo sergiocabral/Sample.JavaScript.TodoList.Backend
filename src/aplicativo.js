@@ -112,8 +112,43 @@ app.delete('/tarefa/:id', async (request, response) => {
   }
 })
 
-app.path('/tarefa/:id/completa', (request, response) => response.send('Não implementado'))
-app.path('/tarefa/:id/incompleta', (request, response) => response.send('Não implementado'))
+app.patch('/tarefa/:id/completa', async (request, response) => {
+  try {
+    const tarefas = await lerTarefas()
+    const index = tarefas.findIndex(t => t.id === request.params.id)
+
+    if (index === -1) {
+      return response.status(404).json({ error: 'Tarefa não encontrada' })
+    }
+
+    tarefas[index].completa = true
+
+    await gravarTarefas(tarefas)
+
+    response.json(tarefas[index])
+  } catch (error) {
+    response.status(500).json({ error: 'Erro ao marcar a tarefa como completa' })
+  }
+})
+
+app.patch('/tarefa/:id/incompleta', async (request, response) => {
+  try {
+    const tarefas = await lerTarefas()
+    const index = tarefas.findIndex(t => t.id === request.params.id)
+
+    if (index === -1) {
+      return response.status(404).json({ error: 'Tarefa não encontrada' })
+    }
+
+    tarefas[index].completa = false
+
+    await gravarTarefas(tarefas)
+
+    response.json(tarefas[index])
+  } catch (error) {
+    response.status(500).json({ error: 'Erro ao marcar a tarefa como incompleta' })
+  }
+})
 
 function iniciar(port) {
   app.listen(port, () => console.log(`Aplicação executando em http://localhost:${port}/`))
