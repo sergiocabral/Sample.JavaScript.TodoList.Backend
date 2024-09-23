@@ -93,7 +93,25 @@ app.put('/tarefa/:id', async (request, response) => {
   }
 })
 
-app.delete('/tarefa/:id', (request, response) => response.send('Não implementado'))
+app.delete('/tarefa/:id', async (request, response) => {
+  try {
+    const tarefas = await lerTarefas()
+    const index = tarefas.findIndex(t => t.id === request.params.id)
+
+    if (index === -1) {
+      return response.status(404).json({ error: 'Tarefa não encontrada' })
+    }
+
+    tarefas.splice(index, 1)
+
+    await gravarTarefas(tarefas)
+
+    response.status(204).send()
+  } catch (error) {
+    response.status(500).json({ error: 'Erro ao deletar a tarefa' })
+  }
+})
+
 app.path('/tarefa/:id/completa', (request, response) => response.send('Não implementado'))
 app.path('/tarefa/:id/incompleta', (request, response) => response.send('Não implementado'))
 
