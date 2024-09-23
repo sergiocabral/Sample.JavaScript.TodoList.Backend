@@ -18,7 +18,19 @@ app.get('/tarefas', async (request, response) => {
   }
 })
 
-app.get('/tarefa/:id', (request, response) => response.send('Não implementado'))
+app.get('/tarefa/:id', async (request, response) => {
+  try {
+    const tarefas = await lerTarefas()
+    const tarefa = tarefas.find(t => t.id === request.params.id)
+    if (!tarefa) {
+      return response.status(404).json({ error: 'Tarefa não encontrada' })
+    }
+    response.json(tarefa)
+  } catch (error) {
+    response.status(500).json({ error: 'Erro ao obter a tarefa' })
+  }
+})
+
 app.post('/tarefa', (request, response) => response.send('Não implementado'))
 app.put('/tarefa/:id', (request, response) => response.send('Não implementado'))
 app.delete('/tarefa/:id', (request, response) => response.send('Não implementado'))
