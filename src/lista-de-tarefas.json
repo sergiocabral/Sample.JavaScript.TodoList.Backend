@@ -1,0 +1,17 @@
+[
+  {
+    "id": "1",
+    "descricao": "Estudar JavaScript",
+    "completa": false
+  },
+  {
+    "id": "2",
+    "descricao": "Fazer exercício físico",
+    "completa": true
+  },
+  {
+    "id": "3",
+    "descricao": "Ler um livro",
+    "completa": false
+  }
+]
