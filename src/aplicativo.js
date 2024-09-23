@@ -1,33 +1,80 @@
 import express from 'express'
 import cors from 'cors'
 import { lerTarefas, gravarTarefas } from './tarefas.js'
-import { promises as fs } from 'fs'
+import passport from 'passport'
+import session from 'express-session'
+import { Strategy as GitHubStrategy } from 'passport-github2'
+
+let configuracao
+try {
+  configuracao = await import('./configuracao.json', {
+    with: { type: 'json' }
+  }).then(module => module.default);
+} catch {
+  configuracao = {
+    "githubClientID": "use-aqui-github-client-id",
+    "githubClientSecret": "",
+    "githubCallbackURL": "http://localhost:3000/auth/github/callback"
+  }
+  console.log('Arquivo "configuracao.json" não encontrado. Valores padrão serão usados ou lidos das variáveis de ambiente.')
+}
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
 
-async function validarAutenticacao(request, response, next) {
-  const token = request.headers['authorization']?.split(' ')[1]
+app.use(session({
+  secret: 'chave secreta',
+  resave: false,
+  saveUninitialized: true
+}))
+app.use(passport.initialize())
+app.use(passport.session())
 
-  if (!token) {
-    return response.status(401).json({ error: 'Token não fornecido' })
+passport.use(new GitHubStrategy({
+  clientID: configuracao.githubClientID,
+  clientSecret: configuracao.githubClientSecret,
+  callbackURL: configuracao.githubCallbackURL
+}, (accessToken, refreshToken, profile, done) => {
+  return done(null, profile)
+}))
+
+passport.serializeUser((user, done) => {
+  done(null, { usuario: user.displayName })
+})
+
+passport.deserializeUser((user, done) => {
+  done(null, user)
+})
+
+app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }))
+
+app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: '/' }),
+  (request, response) => {
+    response.redirect(process.env.authRedirect || configuracao.authRedirect || '/usuario')
   }
+)
 
-  try {
-    const data = await fs.readFile('src/autenticacao.json')
-    const { tokens } = JSON.parse(data)
+app.get('/logout', (request, response, next) => {
+  request.logout(function (err) {
+    if (err) { return next(err) }
+    response.redirect('/')
+  })
+})
 
-    if (tokens.includes(token)) {
-      next()
-    } else {
-      response.status(403).json({ error: 'Token inválido' })
-    }
-  } catch (error) {
-    response.status(500).json({ error: 'Erro ao validar o token' + error})
+function validarAutenticacao(request, response, next) {
+  if (!configuracao.githubClientSecret) {
+    console.warn('A autenticação com o GitHub não está configurada.')
+    return next()
   }
+  if (request.isAuthenticated()) {
+    return next()
+  }
+  response.status(401).json({ error: 'Não autenticado com GitHub' })
 }
+
+app.get('/usuario', validarAutenticacao, (request, response) => response.json(request.user))
 
 app.get('/', (request, response) => response.send('Olá Tarefas'))
 
