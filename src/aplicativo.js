@@ -8,7 +8,7 @@ import configuracao from './configuracao.js'
 
 const app = express()
 
-app.use(cors())
+app.use(cors({ origin: configuracao.corsOrigin.split(','), credentials: true }))
 app.use(express.json())
 
 app.use(session({
