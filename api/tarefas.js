@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs'
 
-const arquivo = 'src/lista-de-tarefas.json'
+const arquivo = 'api/lista-de-tarefas.json'
 
 export async function lerTarefas() {
   try {

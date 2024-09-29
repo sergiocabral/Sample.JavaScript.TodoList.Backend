@@ -20,9 +20,9 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 passport.use(new GitHubStrategy({
-  clientID: configuracao.githubClientID,
-  clientSecret: configuracao.githubClientSecret,
-  callbackURL: configuracao.githubCallbackURL
+  clientID: process.env.githubClientID || configuracao.githubClientID,
+  clientSecret: process.env.githubClientSecret || configuracao.githubClientSecret,
+  callbackURL: process.env.githubCallbackURL || configuracao.githubCallbackURL
 }, (accessToken, refreshToken, profile, done) => {
   return done(null, profile)
 }))
@@ -51,7 +51,7 @@ app.get('/logout', (request, response, next) => {
 })
 
 function validarAutenticacao(request, response, next) {
-  if (!configuracao.githubClientSecret) {
+  if (!process.env.githubClientSecret && !configuracao.githubClientSecret) {
     console.warn('A autenticação com o GitHub não está configurada.')
     return next()
   }

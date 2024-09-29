@@ -1,7 +1,7 @@
 import process from 'node:process'
 import { promises as fs } from 'node:fs'
 
-const arquivo = 'src/env.json'
+const arquivo = 'api/env.json'
 
 async function lerConfiguracao(nome) {
   if (process.env[nome] !== undefined) {
