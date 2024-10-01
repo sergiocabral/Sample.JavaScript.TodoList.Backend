@@ -4,20 +4,7 @@ import { lerTarefas, gravarTarefas } from './tarefas.js'
 import passport from 'passport'
 import session from 'express-session'
 import { Strategy as GitHubStrategy } from 'passport-github2'
-
-let configuracao
-try {
-  configuracao = await import('./configuracao.json', {
-    with: { type: 'json' }
-  }).then(module => module.default);
-} catch {
-  configuracao = {
-    "githubClientID": "use-aqui-github-client-id",
-    "githubClientSecret": "",
-    "githubCallbackURL": "http://localhost:3000/auth/github/callback"
-  }
-  console.log('Arquivo "configuracao.json" não encontrado. Valores padrão serão usados ou lidos das variáveis de ambiente.')
-}
+import configuracao from './configuracao.js'
 
 const app = express()
 
@@ -25,7 +12,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use(session({
-  secret: 'chave secreta',
+  secret: configuracao.sessionSecret,
   resave: false,
   saveUninitialized: true
 }))
@@ -52,7 +39,7 @@ app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] 
 
 app.get('/auth/github/callback', passport.authenticate('github', { failureRedirect: '/' }),
   (request, response) => {
-    response.redirect(process.env.authRedirect || configuracao.authRedirect || '/usuario')
+    response.redirect(configuracao.authRedirect || '/usuario')
   }
 )
 
